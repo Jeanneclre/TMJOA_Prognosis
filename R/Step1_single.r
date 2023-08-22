@@ -1,5 +1,5 @@
 iii=1
-method.list = c("glmnet", "svmLinear", "rf", "xgbTree", "lda2","nnet","glmboost","hdda")   
+method.list = c("glmnet", "svmLinear", "rf", "xgbTree", "lda2","nnet","glmboost","hdda")
 vecT=expand.grid(c(1,3,4,5,6,7),1:8)   
 i1=vecT[iii,1]   
 i2=vecT[iii,2]   
@@ -11,7 +11,7 @@ library(MLmetrics)
 library(ggplot2) # Data visualization   
 library(data.table)   
 library(caret)   
-library(LiblineaR)   
+library(LiblineaR)
 library(xgboost)   
 library(lightgbm)   
 library(MASS)   
