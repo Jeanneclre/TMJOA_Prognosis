@@ -1,0 +1,11 @@
+Index,bootstrap,max_depth,max_features,min_samples_leaf,min_samples_split,n_estimators
+0,False,76,sqrt,1,2,195
+1,True,80,sqrt,1,5,146
+2,False,83,sqrt,1,2,113
+3,True,86,sqrt,1,5,122
+4,True,70,sqrt,1,2,117
+5,True,90,sqrt,2,5,93
+6,True,90,sqrt,1,5,64
+7,True,70,sqrt,1,5,108
+8,True,66,sqrt,2,5,171
+9,True,70,sqrt,1,2,84
