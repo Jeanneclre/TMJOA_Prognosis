@@ -19,25 +19,23 @@ def evaluation(y_valid,y_pred,y_scores):
     tn,fp,fn,tp = mt.confusion_matrix(y_valid,y_pred).ravel()  
    
     errors = fp+fn
-    mse = mt.mean_squared_error(y_valid.astype(int), y_pred.astype(int))
-    accuracy = mt.accuracy_score(y_valid,y_pred)*100
-    precision = mt.precision_score(y_valid,y_pred)
-    recall = mt.recall_score(y_valid,y_pred)
-    specificity = tn/(tn+fp)
-    f1 = mt.f1_score(y_valid,y_pred)
-    auc = mt.roc_auc_score(y_valid,y_scores)
+    mse = round(mt.mean_squared_error(y_valid.astype(int), y_pred.astype(int)),3)
+    accuracy = round(mt.accuracy_score(y_valid,y_pred)*100,3)
+    precision = round(mt.precision_score(y_valid,y_pred),3)
+    recall = round(mt.recall_score(y_valid,y_pred),3)
+    specificity = round(tn/(tn+fp),3)
+    f1 = round(mt.f1_score(y_valid,y_pred),3)
+    # auc = round(mt.roc_auc_score(y_valid,y_scores),3)
     
 
     print('-----Model Performance----')
     print('Number of errors: ', errors)
-    # print(f'Accuracy : {accuracy} %')
     print(f'Accuracy: {accuracy} %')
-    
     print(f'Precision score tp/(tp+fp) : {precision} ') #best value is 1 - worst 0
     print(f'Recall score tp/(fn+tp): {recall} ') # Interpretatiom: High recall score => model good at identifying positive examples
     print(f'Specificity tn/(tn+fp): {specificity} ')
     print(f'F1 : {f1} ') 
-    print(f'AUC : {auc} ') # best is 1
+    # print(f'AUC : {auc} ') # best is 1
     print("Positive MSE :", mse)
     print("---------------------------")
 

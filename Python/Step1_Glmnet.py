@@ -88,7 +88,7 @@ for train_idx, valid_idx in skf.split(other_columns, first_column):
     train_control.fit(X_train, y_train)
 
     y_pred = train_control.predict(X_valid)
-    y_scores = train_control.predict_proba(X_valid)[:,1]
+    y_scores= y_pred
 
     acc, evalHeadList, evalList = mf.evaluation(y_valid,y_pred,y_scores)
     

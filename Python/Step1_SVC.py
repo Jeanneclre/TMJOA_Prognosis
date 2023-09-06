@@ -47,7 +47,7 @@ foldsCVT = list(skf.split(other_columns,first_column))
 mse_scorer = mt.make_scorer(mt.mean_squared_error, greater_is_better=False) # verify if it's True or False to get the good values
 
 train_control = GridSearchCV(
-    estimator=SVC(), 
+    estimator=SVC(probability=True), 
     param_grid=hp.param_grid_svm, 
     scoring=mse_scorer,
     n_jobs=-1, # you can add n_jobs=2 to run in parallel on computer with 2 cores or "-1" to use all processors

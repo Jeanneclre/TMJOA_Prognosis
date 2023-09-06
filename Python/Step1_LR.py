@@ -28,7 +28,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 import Hyperparameters as hp
 import modelFunctions as mf
 
-ModelName = 'SVC'
+ModelName = 'LR'
 
 # Input
 inputFilename = "./TMJOAI_Long_040422_Norm.csv"
@@ -52,7 +52,7 @@ mse_scorer = mt.make_scorer(mt.mean_squared_error, greater_is_better=False) # ve
 
 train_control = GridSearchCV(
     estimator=LogisticRegression(), 
-    param_grid=hp.param_grid_svm, 
+    param_grid=hp.param_grid_lr, 
     scoring=mse_scorer,
     n_jobs=-1, # you can add n_jobs=2 to run in parallel on computer with 2 cores or "-1" to use all processors
     refit=True,
