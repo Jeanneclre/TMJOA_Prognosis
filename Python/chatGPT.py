@@ -1,13 +1,22 @@
 import pandas as pd
 import numpy as np
 import subprocess
-import random
-from sklearn.model_selection import KFold, train_test_split,StratifiedKFold, GridSearchCV
+
+from sklearn.model_selection import KFold,StratifiedKFold, GridSearchCV, RandomizedSearchCV
+from sklearn.feature_selection import  SelectFromModel
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression,ElasticNet
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import PCA
 
+try:
+    from pysda.classifiers import HDDAClassifier
+except:
+    import sys
+    python = sys.executable
+    subprocess.check_call([python, '-m', 'pip', 'install', 'pysda'])
+    from pysda.classifiers import HDDAClassifier
 import modelFunctions as mf
 import Hyperparameters as hp
 try:
@@ -65,7 +74,6 @@ from sklearn.metrics import classification_report, confusion_matrix, roc_curve, 
 import warnings
 warnings.filterwarnings("ignore")
 
-from sklearn.feature_selection import SelectFromModel
 
 import os
 
@@ -113,11 +121,11 @@ def choose_model(method):
     elif method == "glmboost":
         # fit a gradient boosting model using the gbm package
         model = lgb.LGBMClassifier()
-        param_grid = hp.param_grid_glm
+        param_grid = hp.test_param_grid_glm
 
     elif method == "hdda":
         # fit a high-dimensional discriminant analysis model using the pls package
-        model = sm.multiclass.HDDA()
+        model = PCA()
         param_grid = hp.param_grid_hdda
 
     else:
@@ -150,15 +158,35 @@ def run_innerLoop(method, filename,fold):
         X_trainIn, X_valid= X[train_idx], X[valid_idx]
         y_trainIn, y_valid = y[train_idx], y[valid_idx]
 
-        hyperparam_tuning = GridSearchCV(estimator=model,
-                            param_grid=param_grid,
-                            scoring='accuracy',
-                            n_jobs=-1,
-                            cv=inner_cv,
-                            verbose=0,
-                            refit=True,
-                            error_score='raise')
+        print('len dict grid:', len(param_grid))
+        if method == "hdda":
+            X_trainIn = model.fit_transform(X_train)
+            X_test_pca = model.transform(X_test)
+
+            model = HDDAClassifier()
+
+        if len(param_grid) > 4:
+            hyperparam_tuning = RandomizedSearchCV(estimator=model,
+                                param_distributions=param_grid,
+                                n_iter=10,
+                                scoring='accuracy',
+                                n_jobs=-1,
+                                cv=inner_cv,
+                                verbose=0,
+                                refit=True,
+                                error_score='raise')
+        else:
+            hyperparam_tuning = GridSearchCV(estimator=model,
+                                param_grid=param_grid,
+                                scoring='accuracy',
+                                n_jobs=-1,
+                                cv=inner_cv,
+                                verbose=0,
+                                refit=True,
+                                error_score='raise')
         
+       
+            
         hyperparam_tuning.fit(X_trainIn, y_trainIn)
         best_estimator = hyperparam_tuning.best_estimator_
 
@@ -233,7 +261,7 @@ def run_innerLoop(method, filename,fold):
     return predYT, predYT_acc, bestM_filename
 
 
-iii = 3
+iii = 7
 methods_list = ["glmnet", "svmLinear", "rf", "xgbTree", "lda2", "nnet", "glmboost", "hdda"]
 vecT = [(i, j) for i in [1, 3, 4, 5, 6, 7] for j in range(1, 9)]
 i1 = vecT[iii-1][0]

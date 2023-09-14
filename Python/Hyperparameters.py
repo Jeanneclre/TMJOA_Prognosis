@@ -53,11 +53,10 @@ learning_rate = [float(x) for x in np.linspace(start=0.01,stop=1.0, num=40)]
 
 # XGBtree - GradientBoostingClassifier
 param_grid_xgb = {
-    'n_estimators': n_estimators,
-    'learning_rate': [float(x) for x in np.linspace(start=0.0,stop=100, num=40)],
+    'n_estimators': [float(x) for x in np.linspace(start=40,stop=200, num=25)],
+    'learning_rate': [float(x) for x in np.linspace(start=0.0,stop=1, num=20)],
     'max_depth': max_depth,
     'min_samples_split': min_samples_split,
-    'min_samples_leaf': min_samples_leaf,
     'subsample': [0.5,0.75,1.0],
     'max_features': max_features,
 }
@@ -83,14 +82,22 @@ param_grid_nnet = {
 # learning rate should be a double type
 double_learning_rate = [float(x) for x in np.linspace(start=0.01,stop=1.0, num=40)]
 param_grid_glm = {
-    'max_depth': max_depth,
+    'max_depth': [-1],
     'n_estimators': n_estimators,
     'learning_rate': double_learning_rate,
+    'num_leaves': 2*max_depth,
+    'min_split_gain': [0.0, 0.1, 0.2, 0.3],
 }
 
-# HDDA -- high-dimensional discriminant analysis
+test_param_grid_glm = {
+    'learning_rate': [0.001, 0.01, 0.1, 0.2, 0.3],
+    'n_estimators': [50, 100, 150, 200, 250, 300],
+    'num_leaves': [32, 40, 50, 60],
+    'max_depth': [5],
+}
+# HDDA -- high-dimensional discriminant analysis PCA
 param_grid_hdda = {
     'n_components': [1, 2, 3, 4, 5],
-    'n_iter': [10, 20, 30, 40, 50],
-    'tol': [0.0001, 0.001, 0.01, 0.1],
+    'whiten': [True, False],
 }
+
