@@ -7,27 +7,39 @@
 ##                                             ##
 #################################################
 
+import pandas as pd
+import os
 
-iii=0 # First index in python is 0
+import modelFunctions as mf
+import Step1 as st1
 
+methods_list = ["glmnet", "svmLinear", "rf", "xgbTree", "lda2", "nnet", "glmboost", "hdda"]
 
-method_list = {
-    "lasso": "Step1_Glmnet.py",
-    "ridge": "Step1_ridge.py",
-    "svc": "Step1_SVC.py",
-    "random_forest": "Step1_RF.py",
-    "xgboost": "Step1_XGboost.py", 
-    "lda": "Step1_LDA.py", 
-    "neural_network": "Step1_NNET.py", 
-    "gradient_boosting": "Step1_GBM.py"
-}
+vecT = [(i, j) for i in [0, 2, 3, 4, 5, 6] for j in range(0, 7)]
+print('vecT:',vecT)
+A = pd.read_csv("./TMJOAI_Long_040422_Norm.csv")
 
+y = A.iloc[:, 0].values
+print('len(y):',len(y))
+X = A.iloc[:, 1:].values
+print('len(X):',len(X))
 
-Nfeature_selection = [1, 3, 4, 5, 6, 7]
-Npredictive_modeling = list(range(1, 9)) 
+for iii in range(len(vecT)):
+    i1 = vecT[iii][0]
+    i2 = vecT[iii][1]
 
-# Generate every possible combination of the two lists
-vecT = [(val1, val2) for val2 in Npredictive_modeling for val1 in Nfeature_selection ]
+    print(f'====== FS with {methods_list[i1]} ======')
+    print(f'________ Model train - {methods_list[i2]} ________')
 
-i1 = vecT[iii][0]
-i2 = vecT[iii][1]
+    # Init files for results
+    innerL_filename = f"PerformancesAUC/{methods_list[i2]}_{methods_list[i1]}/scores_{methods_list[i2]}_InnerLoop.csv"
+    outerL_filename = f"PerformancesAUC/{methods_list[i2]}_{methods_list[i1]}/result_{methods_list[i2]}_OuterLoop.csv"
+    if not os.path.exists(os.path.dirname(innerL_filename)):
+        os.makedirs(os.path.dirname(innerL_filename))
+
+    # Remove files if they exist
+    mf.delete_file(innerL_filename)
+    mf.delete_file(outerL_filename)
+
+    
+    st1.OuterLoop(X, y, methods_list[i1], methods_list[i2], innerL_filename, outerL_filename)

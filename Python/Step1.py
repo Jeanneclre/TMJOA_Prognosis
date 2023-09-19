@@ -1,17 +1,18 @@
-import pandas as pd
-import numpy as np
-import subprocess
 
-from sklearn.model_selection import KFold,StratifiedKFold, GridSearchCV, RandomizedSearchCV
+# Functions used for splitting the data in folds, hyperparameters tuning, feature selection, evaluation, etc.
+from sklearn.model_selection import StratifiedKFold, GridSearchCV, RandomizedSearchCV
 from sklearn.feature_selection import  SelectFromModel
 from sklearn import metrics
-from sklearn.linear_model import LogisticRegression,ElasticNet
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.decomposition import PCA
 
-import modelFunctions as mf
-import Hyperparameters as hp
+# Import models from sklearn and from other packages
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.neural_network import MLPClassifier
+from HDDA import hdda
+
 try:
     from xgboost import XGBClassifier
 except:
@@ -20,38 +21,23 @@ except:
     subprocess.check_call([python, '-m', 'pip', 'install', 'xgboost'])
     from xgboost import XGBClassifier
 
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.neural_network import MLPClassifier
+# Import other files of the project
+import modelFunctions as mf
+import Hyperparameters as hp
 
-
-import matplotlib.pyplot as plt
-
-
-try:
-    import lightgbm as lgb
-except:
-    import sys
-    python = sys.executable
-    subprocess.check_call([python, '-m', 'pip', 'install', 'lightgbm'])
-    import lightgbm as lgb
-
-try:
-    import statsmodels.api as sm
-except:
-    import sys
-    python = sys.executableestimator,
-    subprocess.check_call([python, '-m', 'pip', 'install', 'statsmodels'])
-    import statsmodels.api as sm
-
-
-import warnings
-warnings.filterwarnings("ignore")
-
-
+# Useful libraries
 import os
-
 import pickle
+import pandas as pd
+import numpy as np
+import subprocess
+
 def choose_model(method):
+    """
+    Give the right model and the right hyperparameters grid for the method
+    Input: method: name of the method
+    Output: model: model from the method list, param_grid: hyperparameters grid
+    """
     if method == "glmnet":
         # fit a logistic regression model using the glmnet package
         model = LogisticRegression()
@@ -72,9 +58,11 @@ def choose_model(method):
 
     elif method == "xgbTree":
         # fit an XGBoost model using the xgboost package
-        from sklearn.ensemble import GradientBoostingClassifier
-        model = GradientBoostingClassifier()
-        # model = XGBClassifier()
+        # from sklearn.ensemble import GradientBoostingClassifier
+        # model = GradientBoostingClassifier()
+        # # model = XGBClassifier()
+        # param_grid = hp.param_grid_xgb
+        model = XGBClassifier()
         param_grid = hp.param_grid_xgb
         
     elif method == "lda2":
@@ -90,23 +78,75 @@ def choose_model(method):
         
 
     elif method == "glmboost":
-        # fit a gradient boosting model using the gbm package
-        model = lgb.LGBMClassifier()
-        param_grid = hp.test_param_grid_glm
+        model = GradientBoostingClassifier()
+        param_grid = hp.param_grid_glmboost
+
 
     elif method == "hdda":
         # fit a high-dimensional discriminant analysis model using the pls package
-        model = PCA()
+        model = hdda.HDDC()
         param_grid = hp.param_grid_hdda
-
     else:
         raise ValueError("Invalid method name. Choose from 'glmnet', 'svmLinear', 'rf', 'xgbTree', 'lda2', 'nnet', 'glmboost', 'hdda'.")
     
     return model, param_grid
 
-def run_innerLoop(method, filename,fold):
+def runFS(model,X_train,X_valid,y_train):
+    """
+    Features selection with a model from the method list (main.py)
+    Input: model: model from the method list, X_train: Data, y_train: Target
+    Output: X_train_selected: Data with selected features
+    """
+    try:
+        print('Feature selection')
+        #Meta-transformer for selecting features based on importance weights.
+        sfm = SelectFromModel(model)
+        X_train_selected = sfm.transform(X_train)
+        X_valid_selected = sfm.transform(X_valid)
 
-    model,param_grid = choose_model(method)
+        sfm.fit(X_train_selected, y_train)
+        print('***Number of features selected: ', X_train_selected.shape)
+
+
+    except:
+        # If the estimator doesn't support feature selection, use all features
+        print('no feature selection')
+        X_train_selected = X_train
+        X_valid_selected = X_valid
+           
+    return X_train_selected, X_valid_selected
+
+def hyperparam_tuning(model, param_grid, X_train, y_train, inner_cv):
+    # Hyperparameter tuning with GridSearchCV if the grid is not too big, 
+    # otherwise use RandomizedSearchCV - faster
+    if len(param_grid) > 5:
+        hyperparam_tuning = RandomizedSearchCV(estimator=model,
+                            param_distributions=param_grid,
+                            n_iter=10,
+                            scoring='roc_auc',
+                            n_jobs=-1,
+                            cv=inner_cv,
+                            verbose=0,
+                            refit=True,
+                            error_score='raise')
+    else:
+        hyperparam_tuning = GridSearchCV(estimator=model,
+                            param_grid=param_grid,
+                            scoring='roc_auc',  
+                            n_jobs=-1,
+                            cv=inner_cv,
+                            verbose=0,
+                            refit=True,
+                            error_score='raise') 
+        
+    hyperparam_tuning.fit(X_train, y_train)
+    best_estimator = hyperparam_tuning.best_estimator_
+    return best_estimator
+
+def run_innerLoop(methodFS,methodPM, filename,X,y ,fold):
+
+    modelFS,param_gridFS = choose_model(methodFS)
+    modelPM,param_gridPM = choose_model(methodPM)
     Nsubfolds = 10
     inner_cv = StratifiedKFold(n_splits=Nsubfolds, shuffle=True, random_state=1) # '*'
     
@@ -123,58 +163,20 @@ def run_innerLoop(method, filename,fold):
         idx +=1
         print(f'________Inner Loop {idx}_________')
 
-        X_trainIn, X_valid= X[train_idx], X[valid_idx]
-        y_trainIn, y_valid = y[train_idx], y[valid_idx]
+        X_train, X_valid= X[train_idx], X[valid_idx]
+        y_train, y_valid = y[train_idx], y[valid_idx]
     
+        ## Feature selection ##
+        # 1st: hyperparameter tuning for the FS model
+        best_estimatorFS= hyperparam_tuning(modelFS, param_gridFS, X_train, y_train, inner_cv)
+        # 2nd: run the FS model with the best hyperparameters
+        X_train_selected,X_valid_selected= runFS(best_estimatorFS,X_train, X_valid,y_train)
 
-        # Hyperparameter tuning with GridSearchCV if the grid is not too big, 
-        # otherwise use RandomizedSearchCV - faster
-        if len(param_grid) > 5:
-            hyperparam_tuning = RandomizedSearchCV(estimator=model,
-                                param_distributions=param_grid,
-                                n_iter=10,
-                                scoring='roc_auc',
-                                n_jobs=-1,
-                                cv=inner_cv,
-                                verbose=0,
-                                refit=True,
-                                error_score='raise')
-        else:
-            hyperparam_tuning = GridSearchCV(estimator=model,
-                                param_grid=param_grid,
-                                scoring='roc_auc',  # use AUC 
-                                n_jobs=-1,
-                                cv=inner_cv,
-                                verbose=0,
-                                refit=True,
-                                error_score='raise') 
-        
-       
-        hyperparam_tuning.fit(X_trainIn, y_trainIn)
-        best_estimator = hyperparam_tuning.best_estimator_
+        # Hyperparameter tuning for the predictive model (PM)
+        best_estimator = hyperparam_tuning(modelPM, param_gridPM, X_train_selected, y_train, inner_cv)
+        print('best_estimator for PM:', best_estimator)
 
-
-        # Feature selection
-        try:
-            print('Feature selection')
-            #Meta-transformer for selecting features based on importance weights.
-            sfm = SelectFromModel(best_estimator, prefit=True)
-            X_train_selected = sfm.transform(X_trainIn)
-            X_valid_selected = sfm.transform(X_valid)
-            print('Number of features selected:', X_train_selected.shape[1])
-
-        except:
-            # If the estimator doesn't support feature selection, use all features
-            print('no feature selection')
-            X_train_selected = X_trainIn
-            X_valid_selected = X_valid
-
-        # ADD : update best estimator with the selected features
-
-        # Fit the model with the best hyperparameters
-        best_estimator.fit(X_train_selected, y_trainIn)
-
-        print('best_estimator:', best_estimator)
+        best_estimator.fit(X_train_selected, y_train)
         y_pred = best_estimator.predict(X_valid_selected)
         try:
             y_scores = best_estimator.predict_proba(X_valid_selected)[:,1]
@@ -204,9 +206,7 @@ def run_innerLoop(method, filename,fold):
             print('Best Model is number ', idx_acc)
             file_toDel = 1
         print('best model current:', bestM_filename)
-    
-    print('y_trueList SHAPE:', len(y_trueList))
-    print('predYT SHAPE:', len(predYT))
+
     # Evaluation and save results in files
     accuracy,column_name,list_eval = mf.evaluation(y_trueList,predYT,scoresList,idx)
     mf.write_files(filename,column_name,list_eval)
@@ -214,50 +214,34 @@ def run_innerLoop(method, filename,fold):
     return predYT, y_trueList, bestM_filename
 
 
-
-methods_list = ["glmnet", "svmLinear", "rf", "xgbTree", "lda2", "nnet", "glmboost", "hdda"]
-
-for iii in range(0,3):
-    print('**********', methods_list[iii], '**********')
-    vecT = [(i, j) for i in [1, 3, 4, 5, 6, 7] for j in range(1, 9)]
-    i1 = vecT[iii-1][0]
-    i2 = vecT[iii-1][1]
-
-    A = pd.read_csv("./TMJOAI_Long_040422_Norm.csv")
-
-    y = A.iloc[:, 0].values
-    X = A.iloc[:, 1:].values
-
+def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
+    """
+    Outer loop of the nested cross validation
+    Input: X: Data, y: Target, innerL_filename: Name of the file for inner loop results, 
+    outerL_filename: Name of the file for outer loop results, methods_list: List of the methods, iii: index of the method
+    Output: "<outerL_filename>.csv" file
+    """
+    print('********Outer Loop**********')
+    
     Nfold = 10
     N = 10
     seed0 = 2022
 
     np.random.seed(seed0)
-    folds_CVT = KFold(n_splits=Nfold, shuffle=True, random_state=seed0)
-
-    # Init files for results
-    innerL_filename = f"PerformancesAUC/{methods_list[iii]}/result_{methods_list[iii]}_InnerLoop.csv"
-    outerL_filename = f"PerformancesAUC/{methods_list[iii]}/result_{methods_list[iii]}_OuterLoop.csv"
-    # Create the path to store the file 'result_X_InnerLoop.csv' if it doesn't exist
-    if not os.path.exists(os.path.dirname(innerL_filename)):
-        os.makedirs(os.path.dirname(innerL_filename))
-
-    # Remove files if they exist
-    mf.delete_file(innerL_filename)
-    mf.delete_file(outerL_filename)
+    folds_CVT = StratifiedKFold(n_splits=Nfold, shuffle=True, random_state=seed0)
 
     y_predicts = []
     y_scroresList = []
 
     acc0=0
     fileToDel = 0
-    for fold, (train_idx, test_idx) in enumerate(folds_CVT.split(X)):
+    for fold, (train_idx, test_idx) in enumerate(folds_CVT.split(X,y)):
         print(f"================Fold {fold+1}================")
-    
+
         X_train, X_test = X[train_idx], X[test_idx]
         y_train, y_test = y[train_idx], y[test_idx]
 
-        predictInL, correctPred_InL, bestInnerM_filename = run_innerLoop(methods_list[iii],innerL_filename,fold+1)
+        predictInL, correctPred_InL, bestInnerM_filename = run_innerLoop(methodFS,methodPM, innerL_filename,X_train,y_train,fold+1)
 
         print('The best model for this fold is: ', bestInnerM_filename)
         
@@ -279,7 +263,7 @@ for iii in range(0,3):
             y_scroresList.append(y_Fscores[i])
 
         acc_eachFold = metrics.accuracy_score(y_test, y_Fpred)
-    
+
         if acc_eachFold > acc0:
             if fileToDel != 0:
                 mf.delete_file(bestOuterM_filename)
@@ -298,8 +282,8 @@ for iii in range(0,3):
             fileToDel = 1
 
             print('best Outer model current:', bestOuterM_filename)
-    
-    
+
+
 
     # Save predictions of the inner loop in a csv file
     prediction_filename = innerL_filename.split('.')[0]+f'_Innerpredictions{fold}'+'.csv'
@@ -310,11 +294,21 @@ for iii in range(0,3):
     print("********Final**********")
     print('Best Model Outer Loop is number ', bestOuterM_filename)
     print('len y_predicts:', len(y_predicts))
-    accuracy,column_name,list_eval = mf.evaluation(y,y_predicts,y_scroresList,fold+1)
+    column_name,list_eval = mf.evaluation(y,y_predicts,y_scroresList,fold+1)[1:]
+    mf.write_files(outerL_filename,column_name,list_eval)
+
+    print('column_name:',column_name)
+    print('list_eval:',list_eval)
+    #Save evaluation in a csv file for each model that is runned in outerloop and add to the previous data
+    # Add in the first index the name of the model
+    list_eval.insert(0,f'{methodPM}_{methodFS}')
+    column_name.insert(0,'Model PM_FS')
+    performance_filename = 'Final_Performances48.csv'
+    mf.save_performance(list_eval, column_name, performance_filename)
+
+
 
     prediction_filename = outerL_filename.split('.')[0]+'_Finalpredictions'+'.csv'
     df_predict = pd.DataFrame({'Actual': y, 'Predicted': y_predicts})
     df_predict.to_csv(prediction_filename, index=False)
-    mf.write_files(outerL_filename,column_name,list_eval)
-
     

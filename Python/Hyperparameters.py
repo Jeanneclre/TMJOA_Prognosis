@@ -17,6 +17,32 @@ min_samples_leaf = [1,2]
 # Method of selecting samples for training each tree
 bootstrap = [True,False]
 
+# For glmboost
+double_learning_rate = [float(x) for x in np.linspace(start=0.01,stop=1.0, num=40)]
+
+#Glmnet = elasticNet
+param_grid_glmnet = {
+    'alpha': [float(x) for x in np.linspace(start=0.0001,stop=100.0, num=100)],
+    'l1_ratio': [float(x) for x in np.linspace(start=0.001,stop=1.0, num=20)],
+}
+
+#LogisticRegression --> glmnet 
+param_grid_lr = {
+    'penalty': ['l1'],         # Penalty type
+    'C': [0.01, 0.1, 1.0, 10.0],     # Regularisation parameter
+    'solver': ['liblinear'],  # resolution algorithm
+    'max_iter': [ 5000],  # Maximum number of iterations
+}
+
+#SVM
+param_grid_svm = {
+    'C': [float(x) for x in np.linspace(start=0.01,stop=10, num=50)],
+    'kernel': ['linear', 'rbf','poly','sigmoid'], #'precomputed' can only be used when passing a 9n_samples, n_samples) data matrix
+    'degree': [int(x) for x in np.linspace(start=1,stop=10, num=10)],
+    'gamma': ['scale', 'auto'],
+}
+
+
 # Random forest
 param_grid_rf = {'n_estimators': n_estimators,
                'max_features': max_features,
@@ -25,47 +51,21 @@ param_grid_rf = {'n_estimators': n_estimators,
                'min_samples_leaf': min_samples_leaf,
                'bootstrap': bootstrap}
 
-#Glmnet = elasticNet
-param_grid_glmnet = {
-    'alpha': [float(x) for x in np.linspace(start=0.0001,stop=100.0, num=100)],
-    'l1_ratio': [float(x) for x in np.linspace(start=0.001,stop=1.0, num=20)],
-}
 
-#SVM
-param_grid_svm = {
-    'C': [float(x) for x in np.linspace(start=0.01,stop=10, num=100)],
-    'kernel': ['linear', 'rbf','poly','sigmoid'], #'precomputed' can only be used when passing a 9n_samples, n_samples) data matrix
-    'degree': [int(x) for x in np.linspace(start=1,stop=10, num=10)],
-    'gamma': ['scale', 'auto'],
-}
-
-
-#LogisticRegression
-param_grid_lr = {
-    'penalty': ['l2'],         # Penalty type
-    'C': [0.01, 0.1, 1.0, 10.0],     # Regularisation parameter
-    'solver': ['liblinear', 'lbfgs', 'saga','sag'],  # resolution algorithm
-    'max_iter': [ 5000],  # Maximum number of iterations
-}
-
-learning_rate = [float(x) for x in np.linspace(start=0.01,stop=1.0, num=40)]
-
-
-# XGBtree - GradientBoostingClassifier
+# XGBtree - XGBClassifier()
 param_grid_xgb = {
-    'n_estimators': [float(x) for x in np.linspace(start=40,stop=200, num=25)],
-    'learning_rate': [float(x) for x in np.linspace(start=0.0,stop=1, num=20)],
+    'n_estimators': [int(x) for x in np.linspace(start=40,stop=200, num=25)],
+    'learning_rate': [float(x) for x in np.linspace(start=0.01,stop=1, num=20)],
     'max_depth': max_depth,
-    'min_samples_split': min_samples_split,
     'subsample': [0.5,0.75,1.0],
-    'max_features': max_features,
 }
 
 
 # LDA
 param_grid_lda = {
-    'solver': ['svd', 'lsqr', 'eigen'],
-    'shrinkage': [None, 'auto'],
+    'solver': ['svd','lsqr'],
+    'shrinkage': [None],
+    'n_components': [1],
 }
 
 # Neural Network
@@ -79,25 +79,26 @@ param_grid_nnet = {
 }
 
 # Glmboost
-# learning rate should be a double type
-double_learning_rate = [float(x) for x in np.linspace(start=0.01,stop=1.0, num=40)]
-param_grid_glm = {
-    'max_depth': [-1],
-    'n_estimators': n_estimators,
-    'learning_rate': double_learning_rate,
-    'num_leaves': 2*max_depth,
-    'min_split_gain': [0.0, 0.1, 0.2, 0.3],
+param_grid_glmboost = {
+    'loss': ['log_loss', 'exponential'],
+    'learning_rate': [float(x) for x in np.linspace(start=0.01,stop=1, num=20)],
+    'n_estimators': [int(x) for x in np.linspace(start=40,stop=200, num=25)],
+    'subsample': [0.5,0.75,1.0],
+    'max_depth': max_depth,
+    'min_samples_split': min_samples_split,
+    'max_features': max_features,
+
 }
 
-test_param_grid_glm = {
-    'learning_rate': [0.001, 0.01, 0.1, 0.2, 0.3],
-    'n_estimators': [50, 100, 150, 200, 250, 300],
-    'num_leaves': [32, 40, 50, 60],
-    'max_depth': [5],
-}
 # HDDA -- high-dimensional discriminant analysis PCA
-param_grid_hdda = {
+param_grid_pca = {
     'n_components': [1, 2, 3, 4, 5],
     'whiten': [True, False],
 }
 
+param_grid_hdda = {
+    'C' : [int(x) for x in np.linspace(start=1,stop=10, num=10)],
+    'th': [float(x) for x in np.linspace(start=0.01,stop=1, num=20)],
+    'model' : ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10'],
+    
+    }
