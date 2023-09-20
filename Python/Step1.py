@@ -161,7 +161,11 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold):
 
     for train_idx, valid_idx in inner_cv.split(X,y):
         idx +=1
+        import time
         print(f'________Inner Loop {idx}_________')
+
+        # print the hour
+        print('run began at',time.localtime()) 
 
         X_train, X_valid= X[train_idx], X[valid_idx]
         y_train, y_valid = y[train_idx], y[valid_idx]

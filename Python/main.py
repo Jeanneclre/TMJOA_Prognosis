@@ -15,7 +15,7 @@ import Step1 as st1
 
 methods_list = ["glmnet", "svmLinear", "rf", "xgbTree", "lda2", "nnet", "glmboost", "hdda"]
 
-vecT = [(i, j) for i in [0, 2, 3, 4, 5, 6] for j in range(0, 7)]
+vecT = [(i, j) for i in range(0, 7) for j in [0, 2, 3, 4, 5, 6] ]
 print('vecT:',vecT)
 A = pd.read_csv("./TMJOAI_Long_040422_Norm.csv")
 
@@ -25,15 +25,15 @@ X = A.iloc[:, 1:].values
 print('len(X):',len(X))
 
 for iii in range(len(vecT)):
-    i1 = vecT[iii][0]
-    i2 = vecT[iii][1]
+    i_PM = vecT[iii][0]
+    i_FS = vecT[iii][1]
 
-    print(f'====== FS with {methods_list[i1]} ======')
-    print(f'________ Model train - {methods_list[i2]} ________')
+    print(f'====== FS with {methods_list[i_FS]} ======')
+    print(f'________ Model train - {methods_list[i_PM]} ________')
 
     # Init files for results
-    innerL_filename = f"PerformancesAUC/{methods_list[i2]}_{methods_list[i1]}/scores_{methods_list[i2]}_InnerLoop.csv"
-    outerL_filename = f"PerformancesAUC/{methods_list[i2]}_{methods_list[i1]}/result_{methods_list[i2]}_OuterLoop.csv"
+    innerL_filename = f"PerformancesAUC/{methods_list[i_PM]}_{methods_list[i_FS]}/scores_{methods_list[i_PM]}_InnerLoop.csv"
+    outerL_filename = f"PerformancesAUC/{methods_list[i_PM]}_{methods_list[i_FS]}/result_{methods_list[i_PM]}_OuterLoop.csv"
     if not os.path.exists(os.path.dirname(innerL_filename)):
         os.makedirs(os.path.dirname(innerL_filename))
 
@@ -42,4 +42,4 @@ for iii in range(len(vecT)):
     mf.delete_file(outerL_filename)
 
     
-    st1.OuterLoop(X, y, methods_list[i1], methods_list[i2], innerL_filename, outerL_filename)
+    st1.OuterLoop(X, y, methods_list[i_FS], methods_list[i_PM], innerL_filename, outerL_filename)
