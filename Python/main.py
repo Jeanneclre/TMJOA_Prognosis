@@ -15,7 +15,7 @@ import Step1 as st1
 
 methods_list = ["glmnet", "svmLinear", "rf", "xgbTree", "lda2", "nnet", "glmboost", "hdda"]
 
-vecT = [(i, j) for i in range(0, 7) for j in [0, 2, 3, 4, 5, 6] ]
+vecT = [(i, j) for i in range(0, 8) for j in [0, 2, 3, 4, 5, 6] ]
 print('vecT:',vecT)
 A = pd.read_csv("./TMJOAI_Long_040422_Norm.csv")
 
@@ -24,9 +24,16 @@ print('len(y):',len(y))
 X = A.iloc[:, 1:].values
 print('len(X):',len(X))
 
-for iii in range(len(vecT)):
+for iii in range(0,6):
     i_PM = vecT[iii][0]
+
     i_FS = vecT[iii][1]
+    if i_FS == 3 or i_FS == 4 or i_FS == 5 :
+        print('Xgbtree avoid')
+        iii +=1
+        i_PM = vecT[iii][0]
+        i_FS = vecT[iii][1]
+  
 
     print(f'====== FS with {methods_list[i_FS]} ======')
     print(f'________ Model train - {methods_list[i_PM]} ________')

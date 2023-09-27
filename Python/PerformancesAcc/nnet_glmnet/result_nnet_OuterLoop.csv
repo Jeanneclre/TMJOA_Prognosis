@@ -1,0 +1,2 @@
+Total,Nb Errors,Accuracy,Precision,Recall,Specificity,F1,AUC
+74,29,60.811,0.125,0.118,0.754,0.121,0.568

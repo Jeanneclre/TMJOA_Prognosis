@@ -90,15 +90,12 @@ param_grid_glmboost = {
 
 }
 
-# HDDA -- high-dimensional discriminant analysis PCA
-param_grid_pca = {
-    'n_components': [1, 2, 3, 4, 5],
-    'whiten': [True, False],
-}
+# HDDA (high-dimensional discriminant analysis ) - GaussianMixture
 
 param_grid_hdda = {
-    'C' : [int(x) for x in np.linspace(start=1,stop=10, num=10)],
-    'th': [float(x) for x in np.linspace(start=0.01,stop=1, num=20)],
-    'model' : ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10'],
-    
+    'covariance_type': ['full', 'tied', 'diag', 'spherical'],
+    'max_iter': [10000],
+    'tol': [0.01, 0.001, 0.0001, 0.00001],
+    'reg_covar': [0.01, 0.001, 0.0001, 0.00001],
+    'init_params': ['kmeans', 'random'],
     }

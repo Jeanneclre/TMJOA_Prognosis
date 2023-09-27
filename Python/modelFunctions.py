@@ -17,7 +17,9 @@ def evaluation(y_true,y_pred,y_scores,idx):
     """
 
     #confusion matrix with sklearn
-    
+    print('y_true labels:', y_true)
+    print('y_pred labels:', y_pred)
+
     confusMat= mt.confusion_matrix(y_true,y_pred)
     # Check the shape to make sure it's a 2x2 matrix
     if confusMat.shape != (2, 2):
@@ -28,38 +30,40 @@ def evaluation(y_true,y_pred,y_scores,idx):
             confusMat = np.array([[0, 0], [0, confusMat[0][0]]])
     
     tn,fp,fn,tp= confusMat.ravel()
+    print('confusion matrix tn:', tn)
+    print('confusion matrix tp:', tp)
+    ones = np.ones(len(y_true))
 
-  
     errors = fp+fn
     accuracy = round(mt.accuracy_score(y_true,y_pred)*100,3)
-    precision = round(mt.precision_score(y_true,y_pred,zero_division=np.nan),3)
-    recall = round(mt.recall_score(y_true,y_pred),3)
+    precision_case = round(mt.precision_score(y_true,y_pred,zero_division=np.nan),3)
+    precision_control = round(mt.precision_score(ones-y_true,ones-y_pred,zero_division=np.nan),3)
+    recall_case = round(mt.recall_score(y_true,y_pred),3)
+    recall_control = round(mt.recall_score(ones-y_true,ones-y_pred),3)
     specificity = round(tn/(tn+fp),3)
     f1 = round(mt.f1_score(y_true,y_pred),3)
+    f1_score = round((mt.f1_score(y_true,y_pred)+mt.f1_score(ones-y_true,ones-y_pred))/2,3)
 
-    try:
-        print('AUC is calculated')
-        auc = round(mt.roc_auc_score(y_true,y_scores),3)
-    except :
-        auc = 'NaN'
+    y_true = np.array(y_true).astype(int)
+    y_scores = np.array(y_scores).astype(float) 
+    auc = round(mt.roc_auc_score(y_true,y_scores),3)
 
-   
     print('-----evaluation-----')
     print('Number of errors: ', errors)
     print(f'Accuracy: {accuracy} %')
-    print(f'Precision score tp/(tp+fp) : {precision} ') #best value is 1 - worst 0
-    print(f'Recall score tp/(fn+tp): {recall} ') # Interpretatiom: High recall score => model good at identifying positive examples
+    print(f'Precision score tp/(tp+fp) : {precision_case} ') #best value is 1 - worst 0
+    print(f'Recall score tp/(fn+tp): {recall_case} ') # Interpretatiom: High recall score => model good at identifying positive examples
     print(f'Specificity tn/(tn+fp): {specificity} ')
     # Most important scores:
     print(f'F1 : {f1} ') 
     print(f'AUC : {auc} ') # best is 1
 
 
-    column_name = ['Total','Nb Errors', 'Accuracy', 'Precision', 'Recall','Specificity','F1', 'AUC']
-    list_eval = [len(y_pred),errors, accuracy, precision, recall, specificity, f1, auc]
+    column_name = ['Total','Nb Errors', 'Accuracy', 'Precision Case', 'Precision Control', 'Recall Case', 'Recall Control','Specificity','F1','F1 (TL. way)', 'AUC']
+    list_eval = [len(y_pred),errors, accuracy, precision_case, precision_control,recall_case, recall_control,specificity, f1,f1_score, auc]
+ 
 
-
-    return accuracy,column_name,list_eval
+    return auc,column_name,list_eval
 
 def write_files(filename,listHeader,listParam):
     """
