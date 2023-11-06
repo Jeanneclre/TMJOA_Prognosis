@@ -9,38 +9,41 @@
 
 import pandas as pd
 import os
+from sklearn.datasets import load_breast_cancer
 
 import modelFunctions as mf
 import Step1 as st1
-
+import modelFunctions as mf
+# List of equivalent models from R 
 methods_list = ["glmnet", "svmLinear", "rf", "xgbTree", "lda2", "nnet", "glmboost", "hdda"]
+methods_FS = ["glmnet","rf","xgbTree","lda2","nnet","glmboost","AUC"]
 
-vecT = [(i, j) for i in range(0, 8) for j in [0, 2, 3, 4, 5, 6] ]
+vecT = [(i, j) for i in range(0, 8) for j in range(0,7) ]
 print('vecT:',vecT)
 A = pd.read_csv("./TMJOAI_Long_040422_Norm.csv")
 
 y = A.iloc[:, 0].values
-print('len(y):',len(y))
 X = A.iloc[:, 1:].values
-print('len(X):',len(X))
 
-for iii in range(0,6):
+# X, y = load_breast_cancer(return_X_y=True)
+# # X= X[:120]
+# # y= y[:120]
+
+print('len(X):',X.shape)
+print('len(y):',len(y))
+
+
+for iii in range(0, len(vecT)):
     i_PM = vecT[iii][0]
-
     i_FS = vecT[iii][1]
-    if i_FS == 3 or i_FS == 4 or i_FS == 5 :
-        print('Xgbtree avoid')
-        iii +=1
-        i_PM = vecT[iii][0]
-        i_FS = vecT[iii][1]
-  
 
-    print(f'====== FS with {methods_list[i_FS]} ======')
-    print(f'________ Model train - {methods_list[i_PM]} ________')
+
+    print(f'====== FS with {methods_FS[i_FS]} ======')
+    print(f'________ Model trained - {methods_list[i_PM]} ________')
 
     # Init files for results
-    innerL_filename = f"PerformancesAUC/{methods_list[i_PM]}_{methods_list[i_FS]}/scores_{methods_list[i_PM]}_InnerLoop.csv"
-    outerL_filename = f"PerformancesAUC/{methods_list[i_PM]}_{methods_list[i_FS]}/result_{methods_list[i_PM]}_OuterLoop.csv"
+    innerL_filename = f"AUC_res_wo40/{methods_FS[i_FS]}_{methods_list[i_PM]}/scores_{methods_list[i_PM]}_InnerLoop.csv"
+    outerL_filename = f"AUC_res_wo40/{methods_FS[i_FS]}_{methods_list[i_PM]}/result_{methods_list[i_PM]}_OuterLoop.csv"
     if not os.path.exists(os.path.dirname(innerL_filename)):
         os.makedirs(os.path.dirname(innerL_filename))
 
@@ -49,4 +52,14 @@ for iii in range(0,6):
     mf.delete_file(outerL_filename)
 
     
-    st1.OuterLoop(X, y, methods_list[i_FS], methods_list[i_PM], innerL_filename, outerL_filename)
+    top_features_idx,nb_features, best40FS = st1.OuterLoop(X, y, methods_FS[i_FS], methods_list[i_PM], innerL_filename, outerL_filename)
+    
+    print('top_features_idx in main:',top_features_idx)
+    # Save in a file the top features
+    data = [f'{methods_FS[i_FS]}_{methods_list[i_PM]}', nb_features]
+    for i in range(len(top_features_idx)):
+        data.append(f'{A.columns[top_features_idx[i]+1]}')
+    #csv file to save the top features and the model who used them
+    first_row = ['model FS_PM','Nb features', 'top feature 1', 'top feature 2', 'top feature 3', 'top feature 4', 'top feature 5', 'top feature 6', 'top feature 7', 'top feature 8', 'top feature 9', 'top feature 10','top feature 11','top feature 12','top feature 13','top feature 14','top feature 15','top feature 16','top feature 17','top feature 18','top feature 19','top feature 20','top feature 21','top feature 22','top feature 23','top feature 24','top feature 25','top feature 26','top feature 27','top feature 28','top feature 29','top feature 30','top feature 31','top feature 32','top feature 33','top feature 34','top feature 35','top feature 36','top feature 37','top feature 38','top feature 39','top feature 40']
+    
+    mf.write_files(f"AUC_res_wo40/topFeatures.csv", first_row, data)

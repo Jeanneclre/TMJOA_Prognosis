@@ -36,13 +36,13 @@ def evaluation(y_true,y_pred,y_scores,idx):
 
     errors = fp+fn
     accuracy = round(mt.accuracy_score(y_true,y_pred)*100,3)
-    precision_case = round(mt.precision_score(y_true,y_pred,zero_division=np.nan),3)
-    precision_control = round(mt.precision_score(ones-y_true,ones-y_pred,zero_division=np.nan),3)
+    precision_case = round(mt.precision_score(y_true,y_pred,zero_division="warn"),3)
+    precision_control = round(mt.precision_score(ones-y_true,ones-y_pred,zero_division="warn"),3)
     recall_case = round(mt.recall_score(y_true,y_pred),3)
     recall_control = round(mt.recall_score(ones-y_true,ones-y_pred),3)
     specificity = round(tn/(tn+fp),3)
-    f1 = round(mt.f1_score(y_true,y_pred),3)
-    f1_score = round((mt.f1_score(y_true,y_pred)+mt.f1_score(ones-y_true,ones-y_pred))/2,3)
+    f1 = round(mt.f1_score(y_true,y_pred, average='macro'),3) # should be the same as f1_score
+    # f1_score = round((mt.f1_score(y_true,y_pred)+mt.f1_score(ones-y_true,ones-y_pred))/2,3)
 
     y_true = np.array(y_true).astype(int)
     y_scores = np.array(y_scores).astype(float) 
@@ -59,8 +59,8 @@ def evaluation(y_true,y_pred,y_scores,idx):
     print(f'AUC : {auc} ') # best is 1
 
 
-    column_name = ['Total','Nb Errors', 'Accuracy', 'Precision Case', 'Precision Control', 'Recall Case', 'Recall Control','Specificity','F1','F1 (TL. way)', 'AUC']
-    list_eval = [len(y_pred),errors, accuracy, precision_case, precision_control,recall_case, recall_control,specificity, f1,f1_score, auc]
+    column_name = ['Total','Nb Errors', 'Accuracy', 'Precision Case', 'Precision Control', 'Recall Case', 'Recall Control','Specificity','F1', 'AUC']
+    list_eval = [len(y_pred),errors, accuracy, precision_case, precision_control,recall_case, recall_control,specificity, f1, auc]
  
 
     return auc,column_name,list_eval
@@ -98,7 +98,7 @@ def save_performance(list_eval, column_name, filename):
         df = pd.read_csv(filename)
         
         # Check if the file has 49 rows
-        if len(df) == 49:
+        if len(df) == 58:
             # If it does, delete the file
             os.remove(filename)
             
@@ -124,23 +124,3 @@ def delete_file(filename) -> None:
     if os.path.exists(filename) :
         os.remove(filename)
 
-
-################ Old functions ################
-
-def remove_files(filename,NbFold=10, idx_kept=None):
-    """ 
-    Remove files if they exist
-    """
-    for i in range(NbFold):
-        if os.path.exists(filename) and i !=idx_kept:
-            os.remove(filename)
-
-def remove_files_results(NbFold=10, Outputpath='out/'):
-    """ 
-    Remove files if they exist
-    """
-    for i in range(NbFold):
-        if os.path.exists(f'{Outputpath}predict{i}.csv') :
-            os.remove(f'{Outputpath}predict{i}.csv')
-        if os.path.exists(f'{Outputpath}result{i}.csv') :
-            os.remove(f'{Outputpath}result{i}.csv')
