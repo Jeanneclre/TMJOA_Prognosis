@@ -248,7 +248,7 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
     y_remaining = y[40:]
 
     # Split the data in NsubFolds
-    Nsubfolds = 5
+    Nsubfolds = 10
     inner_cv = StratifiedKFold(n_splits=Nsubfolds, shuffle=True, random_state=seed0) # should I put a seed here too (if yes, the same as in outer_cv)?
 
     # Init lists for the evaluation 
@@ -265,9 +265,9 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
     best_nb_features = 0
     best_top40 = []
     
+    idx_subfold=0
     # Loop
     for subfold, (train_idx, valid_idx) in enumerate(inner_cv.split(X_remaining,y_remaining)):
-        idx +=1
         print(f'________Inner Loop {idx}_________')
         # print the day and hour 
         print('run began at',time.localtime()) 
@@ -279,6 +279,8 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
         X_train = np.concatenate((X_excluded, X_train), axis=0)
         y_train = np.concatenate((y_excluded, y_train), axis=0)
 
+        print('y_train',y_train)
+        print('y_test',y_valid)
 
         #Keep the first subfold as validation set
         if subfold == 0:
@@ -288,7 +290,12 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
             # Add the excluded top 40 data back into the training set
             X_trainVal = np.concatenate((X_excluded, X_trainVal), axis=0)
             y_trainVal = np.concatenate((y_excluded, y_trainVal), axis=0)
-            
+
+            print('y_trainVal',y_trainVal)
+            print('y_validVal',y_validVal)
+            continue
+        
+      
         # Feature selection ##
         # 1st: hyperparameter tuning for the FS model
        
@@ -303,7 +310,7 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
         ## Evaluation of the model with the validation set ##
         X_validation_selected= X_validVal[:,top_features_idx]
         X_training_selected= X_trainVal[:,top_features_idx]
-        best_estimator.fit(X_train_selected, y_train)
+        best_estimator.fit(X_training_selected, y_trainVal)
 
         y_pred = best_estimator.predict(X_validation_selected)
         y_scores = best_estimator.predict_proba(X_validation_selected)[:,1]
@@ -322,10 +329,9 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
             idx_acc = idx
             acc0 = auc
             # Save the model into "byte stream"
-            bestM_filename = filename.split('.')[0]+'_bestModel'+f'_{fold}-{idx_acc}'+'.pkl'
             if file_toDel != 0:
                 mf.delete_file(bestM_filename)
-            
+            bestM_filename = filename.split('.')[0]+'_bestModel'+f'_{fold}-{idx_acc}'+'.pkl'
             
             pickle.dump(best_estimator, open(bestM_filename, 'wb'))
             # load the model from pickle: pickled_model = pickle.load(open('model.pkl','rb'))
@@ -341,9 +347,11 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
     list_eval.insert(0,best_nb_features)
     mf.write_files(filename,column_name,list_eval)
 
+    # return the average evaluation of the subfolds
     auc_valid = round(metrics.roc_auc_score(y_trueList,scoresList),3)
     f1_valid = round(metrics.f1_score(y_trueList,predYT, average='macro'),3)
 
+  
     return predYT, y_trueList, bestM_filename,best_nb_features,top_features_inner, best_top40, auc_valid, f1_valid
 
 
@@ -376,20 +384,12 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
     Nfold = 10
     seed0 = 2024
     seed0 = np.random.seed(seed0)
-    # seed0 = random.seed(seed0)
-
-    print('X shape',X.shape)
-    print('y shape',y.shape)
 
     X_excluded = X[:40,:]
-    print('X_excluded shape',X_excluded.shape)
     y_excluded = y[:40]
 
     X_remaining = X[40:,:]
     y_remaining = y[40:]
-
-    print('X_remaining shape',X_remaining.shape)
-    print('y_remaining shape',y_remaining.shape)
     
     folds_CVT = StratifiedKFold(n_splits=Nfold, shuffle=True, random_state=seed0)
     
@@ -409,7 +409,7 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
     for fold, (train_idx, test_idx) in enumerate(folds_CVT.split(X_remaining,y_remaining)):
         print(f"================Fold {fold+1}================")
 
-        # Split your data
+        # Split data
         X_train, X_test = X_remaining[train_idx], X_remaining[test_idx]
         y_train, y_test = y_remaining[train_idx], y_remaining[test_idx]
         
@@ -417,9 +417,10 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
         X_train = np.concatenate(( X_excluded, X_train), axis=0)
         y_train = np.concatenate((y_excluded,y_train ), axis=0)
 
+        print('y_train',y_train)
+        print('y_test',y_test)
 
         predictInL, correctPred_InL, bestInnerM_filename, NbFeatures, top_features_idx, top_40, auc_validation, f1_validation = run_innerLoop(methodFS,methodPM, innerL_filename,X_train,y_train,fold+1,seed0)
-        print('top_features_idx in outer loop',top_features_idx)
 
         # Test the best model from inner loop
         best_innerModel = pickle.load(open(bestInnerM_filename,'rb'))
@@ -502,7 +503,7 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
 
     # Save predictions of the outer loop in a csv file
     prediction_filename = outerL_filename.split('.')[0]+'_Finalpredictions'+'.csv'
-    df_predict = pd.DataFrame({'Actual': y_remaining, 'Predicted': y_predicts})
+    df_predict = pd.DataFrame({'Actual': y_trainList, 'Predicted': y_predicts})
     df_predict.to_csv(prediction_filename, index=False)
 
     return top_features_outer, best_nb_features, best_top40

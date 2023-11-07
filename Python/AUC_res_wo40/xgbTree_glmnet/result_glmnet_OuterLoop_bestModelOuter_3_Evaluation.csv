@@ -1,2 +1,2 @@
 Total,Nb Errors,Accuracy,Precision Case,Precision Control,Recall Case,Recall Control,Specificity,F1,AUC
-4,1,75.0,0.667,1.0,1.0,0.5,0.5,0.733,1.0
+4,0,100.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0

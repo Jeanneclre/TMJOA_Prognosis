@@ -1,2 +1,2 @@
 Nb Features Selected,Total,Nb Errors,Accuracy,Precision Case,Precision Control,Recall Case,Recall Control,Specificity,F1,AUC
-20,34,17,50.0,0.5,0.5,0.529,0.471,0.471,0.5,0.574
+20,34,18,47.059,0.471,0.471,0.471,0.471,0.471,0.471,0.531
