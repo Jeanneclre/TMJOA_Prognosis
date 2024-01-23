@@ -241,11 +241,11 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
     print('X shape',X.shape)
     print('y shape',y.shape)
 
-    X_excluded = X[:40,:]
-    y_excluded = y[:40]
+    # X_excluded = X[:40,:]
+    # y_excluded = y[:40]
 
-    X_remaining = X[40:,:]
-    y_remaining = y[40:]
+    X_remaining = X[:,:]
+    y_remaining = y[:]
 
     # Split the data in NsubFolds
     Nsubfolds = 10
@@ -265,7 +265,6 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
     best_nb_features = 0
     best_top40 = []
     
-    idx_subfold=0
     # Loop
     for subfold, (train_idx, valid_idx) in enumerate(inner_cv.split(X_remaining,y_remaining)):
         print(f'________Inner Loop {idx}_________')
@@ -275,9 +274,9 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
         X_train, X_valid = X_remaining[train_idx], X_remaining[valid_idx]
         y_train, y_valid = y_remaining[train_idx], y_remaining[valid_idx]
         
-        # Add the excluded top 40 data back into the training set
-        X_train = np.concatenate((X_excluded, X_train), axis=0)
-        y_train = np.concatenate((y_excluded, y_train), axis=0)
+        # # Add the excluded top 40 data back into the training set
+        # X_train = np.concatenate((X_excluded, X_train), axis=0)
+        # y_train = np.concatenate((y_excluded, y_train), axis=0)
 
         print('y_train',y_train)
         print('y_test',y_valid)
@@ -288,8 +287,8 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
             y_trainVal, y_validVal = y_remaining[train_idx], y_remaining[valid_idx]
 
             # Add the excluded top 40 data back into the training set
-            X_trainVal = np.concatenate((X_excluded, X_trainVal), axis=0)
-            y_trainVal = np.concatenate((y_excluded, y_trainVal), axis=0)
+            # X_trainVal = np.concatenate((X_excluded, X_trainVal), axis=0)
+            # y_trainVal = np.concatenate((y_excluded, y_trainVal), axis=0)
 
             print('y_trainVal',y_trainVal)
             print('y_validVal',y_validVal)
@@ -326,12 +325,11 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
         auc = metrics.roc_auc_score(y_validVal,y_scores)
       
         if auc > acc0 :
-            idx_acc = idx
             acc0 = auc
             # Save the model into "byte stream"
             if file_toDel != 0:
                 mf.delete_file(bestM_filename)
-            bestM_filename = filename.split('.')[0]+'_bestModel'+f'_{fold}-{idx_acc}'+'.pkl'
+            bestM_filename = filename.split('.')[0]+'_bestModel'+f'_{fold}-{subfold}'+'.pkl'
             
             pickle.dump(best_estimator, open(bestM_filename, 'wb'))
             # load the model from pickle: pickled_model = pickle.load(open('model.pkl','rb'))
@@ -417,9 +415,6 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
         X_train = np.concatenate(( X_excluded, X_train), axis=0)
         y_train = np.concatenate((y_excluded,y_train ), axis=0)
 
-        print('y_train',y_train)
-        print('y_test',y_test)
-
         predictInL, correctPred_InL, bestInnerM_filename, NbFeatures, top_features_idx, top_40, auc_validation, f1_validation = run_innerLoop(methodFS,methodPM, innerL_filename,X_train,y_train,fold+1,seed0)
 
         # Test the best model from inner loop
@@ -479,7 +474,7 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
 
             column_nameTrain = ['Model FS_PM' ,'AUC train (O)','AUC test (O)','AUC validation','F1 train (O)','F1 test (O)','F1 validation']
             list_evalTrain = [f'{methodFS}_{methodPM}',auc_train,auc_test,auc_validation,f1_train,f1_test, f1_validation]
-            mf.write_files('Auc_results_wo40.csv',column_nameTrain,list_evalTrain)
+            mf.write_files('Auc_results_wo40Inner.csv',column_nameTrain,list_evalTrain)
 
 
     # Save predictions of the inner loop in a csv file
@@ -498,12 +493,12 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
     # Add in the first index the name of the model
     list_eval.insert(0,f'{methodFS}_{methodPM}')
     column_name.insert(0,'Model FS_PM')
-    performance_filename = 'Performances48_AUC.csv'
+    performance_filename = 'Performances48_AUC_wo40Inner.csv'
     mf.save_performance(list_eval, column_name, performance_filename)
 
     # Save predictions of the outer loop in a csv file
     prediction_filename = outerL_filename.split('.')[0]+'_Finalpredictions'+'.csv'
-    df_predict = pd.DataFrame({'Actual': y_trainList, 'Predicted': y_predicts})
+    df_predict = pd.DataFrame({'Actual': y_trueList, 'Predicted': y_predicts})
     df_predict.to_csv(prediction_filename, index=False)
 
     return top_features_outer, best_nb_features, best_top40

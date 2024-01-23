@@ -1,3 +1,12 @@
 
 *.DS_Store
 *.pyc
+Abstract/
+AUC_res/
+AUC_res_wo40/
+AUC_res_wo40Inner/
+FeaturesOK/
+PerformancesBreast120/
+old_script/
+FeaturesOK/
+resultwo40_keep/
