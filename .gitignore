@@ -10,3 +10,6 @@ PerformancesBreast120/
 old_script/
 FeaturesOK/
 resultwo40_keep/
+predicted_proba/
+Auc_results_wo40Inner.csv
+Performances48_AUC_wo40Inner.csv

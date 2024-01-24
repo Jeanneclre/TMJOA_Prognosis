@@ -12,11 +12,11 @@ from sklearn.mixture import GaussianMixture # HDDA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.neural_network import MLPClassifier
 
-
 try:
     import xgboost as xgb
 except:
     import sys
+    import subprocess
     python = sys.executable
     subprocess.check_call([python, '-m', 'pip', 'install', 'xgboost'])
     import xgboost as xgb
@@ -32,6 +32,7 @@ import numpy as np
 import random
 import subprocess
 import time
+import os
 
 def choose_model(method,seed0):
     """
@@ -339,8 +340,9 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
             file_toDel = 1
 
         # Save predicted probabilities of the inner loop in a csv file
-        # add a row for each subfold
-        prediction_filename = '/out_valid/'+f'{methodFS}_{methodPM}.csv'
+        if not os.path.exists(os.path.dirname(filename.split('/')[0]+'/out_valid/')):
+            os.makedirs(os.path.dirname(filename.split('/')[0]+'/out_valid/'))
+        prediction_filename = f"{filename.split('/')[0]}/out_valid/"+f'{methodFS}_{methodPM}.csv'
         df_predict = pd.DataFrame({f'Subfold:{subfold}': y_scores})
         df_predict.to_csv(prediction_filename, index=False)
 
@@ -358,7 +360,7 @@ def run_innerLoop(methodFS,methodPM, filename,X,y ,fold,seed0):
     return predYT, y_trueList, bestM_filename,best_nb_features,top_features_inner, best_top40, auc_valid, f1_valid
 
 
-def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
+def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename,folder_output):
     """
     Outer loop of the nested cross validation:
 
@@ -510,7 +512,9 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename):
     df_predict.to_csv(prediction_filename, index=False)
 
     # Save the best predicted probabilities of the outer loop in a csv file
-    prediction_filename = '/out/'+f'{methodFS}_{methodPM}.csv'
+    if not os.path.exists(os.path.dirname(folder_output+'out/')):
+        os.makedirs(os.path.dirname(folder_output+'out/'))
+    prediction_filename = f'{folder_output}out/{methodFS}_{methodPM}.csv'
     df_predict = pd.DataFrame({'Predicted proba': best_predict_proba})
 
     return top_features_outer, best_nb_features, best_top40
