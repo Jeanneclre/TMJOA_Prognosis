@@ -30,10 +30,10 @@ X = A.iloc[:, 1:].values
 # # y= y[:120]
 
 # Write the folder in which you want your output to be saved without '/' at the end
-folder_output='predicted_proba'
+folder_output='predicted_proba_2'
 folder_output+='/'
 
-for iii in range(0, len(vecT)//2):
+for iii in range(len(vecT)//2,len(vecT)+1):
     i_PM = vecT[iii][0]
     i_FS = vecT[iii][1]
 

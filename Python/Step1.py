@@ -484,7 +484,7 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename,folder_o
 
             column_nameTrain = ['Model FS_PM' ,'AUC train (O)','AUC test (O)','AUC validation','F1 train (O)','F1 test (O)','F1 validation']
             list_evalTrain = [f'{methodFS}_{methodPM}',auc_train,auc_test,auc_validation,f1_train,f1_test, f1_validation]
-            mf.write_files('Auc_results_wo40Inner.csv',column_nameTrain,list_evalTrain)
+            mf.write_files(f'{folder_output}Auc_results.csv',column_nameTrain,list_evalTrain)
 
 
     # Save predictions of the inner loop in a csv file
@@ -503,7 +503,7 @@ def OuterLoop(X, y,methodFS, methodPM, innerL_filename, outerL_filename,folder_o
     # Add in the first index the name of the model
     list_eval.insert(0,f'{methodFS}_{methodPM}')
     column_name.insert(0,'Model FS_PM')
-    performance_filename = 'Performances48_AUC_wo40Inner.csv'
+    performance_filename = f'{folder_output}Performances48_{folder_output.split('/')[0]}.csv'
     mf.save_performance(list_eval, column_name, performance_filename)
 
     # Save predictions of the outer loop in a csv file
