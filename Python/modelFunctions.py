@@ -28,7 +28,7 @@ def evaluation(y_true,y_pred,y_scores,idx):
             confusMat = np.array([[confusMat[0][0], 0], [0, 0]])
         else:
             confusMat = np.array([[0, 0], [0, confusMat[0][0]]])
-    
+
     tn,fp,fn,tp= confusMat.ravel()
     print('confusion matrix tn:', tn)
     print('confusion matrix tp:', tp)
@@ -45,7 +45,7 @@ def evaluation(y_true,y_pred,y_scores,idx):
     # f1_score = round((mt.f1_score(y_true,y_pred)+mt.f1_score(ones-y_true,ones-y_pred))/2,3)
 
     y_true = np.array(y_true).astype(int)
-    y_scores = np.array(y_scores).astype(float) 
+    y_scores = np.array(y_scores).astype(float)
     auc = round(mt.roc_auc_score(y_true,y_scores),3)
 
     print('-----evaluation-----')
@@ -55,13 +55,13 @@ def evaluation(y_true,y_pred,y_scores,idx):
     print(f'Recall score tp/(fn+tp): {recall_case} ') # Interpretatiom: High recall score => model good at identifying positive examples
     print(f'Specificity tn/(tn+fp): {specificity} ')
     # Most important scores:
-    print(f'F1 : {f1} ') 
+    print(f'F1 : {f1} ')
     print(f'AUC : {auc} ') # best is 1
 
 
     column_name = ['Total','Nb Errors', 'Accuracy', 'Precision Case', 'Precision Control', 'Recall Case', 'Recall Control','Specificity','F1', 'AUC']
     list_eval = [len(y_pred),errors, accuracy, precision_case, precision_control,recall_case, recall_control,specificity, f1, auc]
- 
+
 
     return auc,column_name,list_eval
 
@@ -72,7 +72,7 @@ def write_files(filename,listHeader,listParam):
     Output: "<filename>.csv" file
     """
     existing_file = os.path.exists(filename)
-    
+
     with open(filename, 'a', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
 
@@ -96,12 +96,11 @@ def save_performance(list_eval, column_name, filename):
     if os.path.isfile(filename):
         # If it does, read it
         df = pd.read_csv(filename)
-        
         # Check if the file has 49 rows
         if len(df) == 58:
             # If it does, delete the file
             os.remove(filename)
-            
+
             # And create a new empty file with the same name
             df = pd.DataFrame(columns=column_name)
             df.to_csv(filename, index=False)
@@ -109,7 +108,7 @@ def save_performance(list_eval, column_name, filename):
         # If the file does not exist, create a new DataFrame with column names and save it
         df = pd.DataFrame(columns=column_name)
         df.to_csv(filename, index=False)
-    
+
     # Convert the list_eval to a DataFrame row
     new_row = pd.DataFrame([list_eval], columns=column_name)
     new_row.to_csv(filename, mode='a', header=False, index=False)
@@ -117,7 +116,7 @@ def save_performance(list_eval, column_name, filename):
 
 
 def delete_file(filename) -> None:
-    """ 
+    """
     Remove file named filename if it exist
     Input: Name of the file
     """
